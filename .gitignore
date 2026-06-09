@@ -1,0 +1,79 @@
+# ============================================
+# SkinSage - 智能美容咨询助手
+# ============================================
+
+# 敏感配置文件
+app/config/config.py
+.env
+.env.local
+.env.*.local
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+
+# Node.js
+node_modules/
+beauty-fonted/node_modules/
+
+# 构建产物
+dist/
+build/
+beauty-fonted/dist/
+
+# 向量数据库（数据文件较大，不提交）
+chroma_db/
+
+# 用户上传文件
+uploads/
+
+# 文档处理临时文件
+document_chunks.json
+
+# 日志文件
+*.log
+logs/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+
+# 数据库文件
+*.sqlite3
+*.db
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率报告
+htmlcov/
+.coverage
+*.cover
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+
+# 打包文件
+*.egg-info/
+*.egg
+.eggs/
+
+# 项目文档（保留 README.md）
+部署文档.md
+文档格式.md
+最终部署文档.txt
+api.md
+PRD.md
+design.md
+prd_htmls/

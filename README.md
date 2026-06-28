@@ -13,7 +13,7 @@
 [![Bilibili](https://img.shields.io/badge/Bilibili-%E8%A7%86%E9%A2%91%E6%BC%94%E7%A4%BA-blue?style=flat-square&logo=bilibili)](https://www.bilibili.com/video/BV1QuEz65EHQ/)
 
 ### 效果演示视频
-<video src="https://github.com/ynwelc/SkinSage/raw/main/beauty-fonted/demo-video/demo.webm" controls width="100%"></video>
+![效果演示视频](./beauty-fonted/demo-video/demo.gif)
 
 ---
 
@@ -36,59 +36,7 @@
 
 ## 架构设计
 
-```mermaid
-graph TD
-    %% 样式定义
-    classDef client fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px;
-    classDef gateway fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
-    classDef core fill:#e8f5e9,stroke:#43a047,stroke-width:2px;
-    classDef db fill:#fff3e0,stroke:#fb8c00,stroke-width:2px;
-    classDef ai fill:#ffebee,stroke:#e53935,stroke-width:2px;
-
-    User([用户 / 管理员]) -->|HTTP / SSE 流式传输| Frontend
-    
-    subgraph 表现层
-        Frontend["Vue3 前端应用<br/>(Pinia状态 / Streams打字机渲染)"]:::client
-    end
-
-    Frontend -->|API 请求 / JWT鉴权| FastAPI
-
-    subgraph 接入层
-        FastAPI["FastAPI 网关服务<br/>(RBAC / JWT认证 / 跨域)"]:::gateway
-    end
-
-    FastAPI --> DocPipeline
-    FastAPI --> QAModule
-
-    subgraph 核心 RAG 引擎
-        DocPipeline["文档清洗与分块管道<br/>(PDF/Word解析, 500字分块+50重叠)"]:::core
-        QAModule["智能问答上下文组装<br/>(LangChain 20轮滑动窗口记忆)"]:::core
-    end
-
-    subgraph AI 模型层
-        BGE["BGE-M3 嵌入模型<br/>(1024维 文本向量化)"]:::ai
-        DeepSeek["DeepSeek-V3.2 (硅基流动)<br/>(语义推理与流式生成)"]:::ai
-    end
-
-    subgraph 持久化存储
-        ChromaDB[("ChromaDB 向量数据库<br/>(文档分块特征检索)")]:::db
-        MySQL[("MySQL 8.0 数据库<br/>(用户凭证 / 权限 / 查询日志)")]:::db
-    end
-
-    %% 文档处理数据流
-    DocPipeline -->|提取文本分块| BGE
-    BGE -->|写入高维向量| ChromaDB
-    DocPipeline -->|保存文档元数据| MySQL
-
-    %% 问答检索数据流
-    QAModule -->|用户提问向量化| BGE
-    ChromaDB -.->|向量相似度 Top-K 召回| QAModule
-    QAModule -->|召回上下文 + 用户Prompt| DeepSeek
-    
-    %% 会话记录与流式返回
-    QAModule -->|更新会话记忆| MySQL
-    DeepSeek -.->|SSE 逐步推送流| FastAPI
-```
+![SkinSage 系统架构图](picture/SkinSage系统架构图.png)
 
 ---
 

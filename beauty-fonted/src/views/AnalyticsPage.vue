@@ -1,253 +1,213 @@
 <template>
   <div class="analytics-page">
-    <h2>统计分析</h2>
-    
-    <!-- 统计卡片 -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-title">总查询数</div>
-        <div class="stat-value">{{ isLoading ? '加载中...' : usageStats?.total_queries.toLocaleString() || 0 }}</div>
-        <div class="stat-change positive">+12% 较上周</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">平均响应时间</div>
-        <div class="stat-value">{{ isLoading ? '加载中...' : ((usageStats?.average_response_time || 0) / 1000).toFixed(1) + 's' }}</div>
-        <div class="stat-change negative">-5% 较上周</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">准确率</div>
-        <div class="stat-value">{{ isLoading ? '加载中...' : ((usageStats?.accuracy_rate || 0) * 100).toFixed(0) + '%' || '0%' }}</div>
-        <div class="stat-change positive">+3% 较上周</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">用户满意度</div>
-        <div class="stat-value">4.8/5</div>
-        <div class="stat-change positive">+0.2 较上周</div>
-      </div>
+    <div class="page-header mb-4">
+      <h2 class="page-title">系统使用统计</h2>
+      <p class="page-subtitle text-muted">监控系统对话质量与知识库覆盖率</p>
     </div>
-    
-    <!-- 图表和数据 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="card">
-        <h3>热门查询</h3>
-        <div class="mt-3">
-          <div v-if="isLoading" class="loading-text">加载中...</div>
-          <div v-else-if="popularQueries.length === 0" class="empty-text">暂无热门查询数据</div>
-          <div v-else>
-            <div class="flex justify-between items-center py-2 border-b border-gray-700" v-for="(query, index) in popularQueries" :key="index">
-              <span>{{ index + 1 }}. {{ query.text }}</span>
-              <span class="text-muted">{{ query.count }}次</span>
-            </div>
-          </div>
+
+    <!-- 核心指标区 -->
+    <div class="stats-grid mb-5">
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-title">总对话次数</div>
+          <div class="stat-icon-small">💬</div>
+        </div>
+        <div class="stat-value">{{ formatNumber(summary.total_conversations) }}</div>
+        <div class="stat-change" :class="getChangeClass(summary.conversations_trend)">
+          <span class="trend-icon">{{ summary.conversations_trend >= 0 ? '↑' : '↓' }}</span>
+          {{ Math.abs(summary.conversations_trend) }}% 较上周
         </div>
       </div>
       
-      <div class="card">
-        <h3>知识库统计</h3>
-        <div class="mt-3">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <div class="text-muted">总文档数</div>
-              <div class="text-2xl font-bold">{{ isLoading ? '加载中...' : knowledgeBaseStats?.total_documents || 0 }}</div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-title">平均对话轮数</div>
+          <div class="stat-icon-small">🔄</div>
+        </div>
+        <div class="stat-value">{{ summary.avg_turns.toFixed(1) }}</div>
+        <div class="stat-change" :class="getChangeClass(summary.turns_trend)">
+          <span class="trend-icon">{{ summary.turns_trend >= 0 ? '↑' : '↓' }}</span>
+          {{ Math.abs(summary.turns_trend) }}% 较上周
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-title">知识库命中率</div>
+          <div class="stat-icon-small">🎯</div>
+        </div>
+        <div class="stat-value">{{ summary.hit_rate }}%</div>
+        <div class="stat-change" :class="getChangeClass(summary.hit_rate_trend)">
+          <span class="trend-icon">{{ summary.hit_rate_trend >= 0 ? '↑' : '↓' }}</span>
+          {{ Math.abs(summary.hit_rate_trend) }}% 较上周
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-title">用户满意度</div>
+          <div class="stat-icon-small">⭐</div>
+        </div>
+        <div class="stat-value">{{ summary.satisfaction_score.toFixed(1) }}</div>
+        <div class="stat-change text-muted">满分 5.0</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <!-- 每日对话趋势图 -->
+      <div class="card chart-card">
+        <h3 class="chart-title">每日对话趋势 (最近7天)</h3>
+        <div class="chart-container">
+          <div class="mock-bar-chart" v-if="!isLoading">
+            <div class="y-axis">
+              <span>500</span>
+              <span>400</span>
+              <span>300</span>
+              <span>200</span>
+              <span>100</span>
+              <span>0</span>
             </div>
-            <div>
-              <div class="text-muted">总分块数</div>
-              <div class="text-2xl font-bold">{{ isLoading ? '加载中...' : knowledgeBaseStats?.total_chunks || 0 }}</div>
-            </div>
-            <div>
-              <div class="text-muted">分块大小</div>
-              <div class="text-2xl font-bold">{{ isLoading ? '加载中...' : knowledgeBaseStats?.chunk_size + '字' || '0字' }}</div>
-            </div>
-            <div>
-              <div class="text-muted">重叠字数</div>
-              <div class="text-2xl font-bold">{{ isLoading ? '加载中...' : knowledgeBaseStats?.overlap_size + '字' || '0字' }}</div>
-            </div>
-          </div>
-          
-          <div class="mt-4">
-            <h4>文档类型分布</h4>
-            <div class="mt-2">
-              <div v-if="isLoading" class="loading-text">加载中...</div>
-              <div v-else-if="Object.keys(documentTypeStats).length === 0" class="empty-text">暂无文档类型数据</div>
-              <div v-else>
-                <div class="chart-container">
-                  <div class="bar-chart">
-                    <div 
-                      v-for="(count, type) in documentTypeStats" 
-                      :key="type" 
-                      class="bar-item"
-                    >
-                      <div class="bar-label">{{ type }}</div>
-                      <div class="bar-wrapper">
-                        <div 
-                          class="bar" 
-                          :style="{ width: `${(count / Math.max(...Object.values(documentTypeStats))) * 100}%` }"
-                        ></div>
-                        <div class="bar-count">{{ count }}</div>
-                      </div>
-                    </div>
+            <div class="bars-area">
+              <div class="bar-group" v-for="(item, index) in trendData" :key="index">
+                <div class="bar-bg">
+                  <div class="bar-fill" :style="`height: ${(item.count / 500) * 100}%`">
+                    <span class="bar-tooltip">{{ item.count }}</span>
                   </div>
                 </div>
+                <div class="x-label">{{ formatDateShort(item.date) }}</div>
               </div>
             </div>
           </div>
+          <div v-else class="loading-state">加载数据中...</div>
         </div>
+      </div>
+
+      <!-- 热门话题 -->
+      <div class="card chart-card">
+        <h3 class="chart-title">热门咨询话题</h3>
+        <div class="topics-list" v-if="!isLoading">
+          <div class="topic-item" v-for="(topic, index) in topTopics" :key="index">
+            <div class="topic-info">
+              <span class="topic-rank" :class="`rank-${index + 1}`">{{ index + 1 }}</span>
+              <span class="topic-name">{{ topic.name }}</span>
+            </div>
+            <div class="topic-progress-container">
+              <div class="topic-progress-bar" :style="`width: ${topic.percentage}%`"></div>
+              <span class="topic-percent">{{ topic.percentage }}%</span>
+            </div>
+          </div>
+        </div>
+        <div v-else class="loading-state">加载数据中...</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
+import gsap from 'gsap'
 
-// 热门查询类型
-interface PopularQuery {
-  text: string
+// 模拟数据接口
+interface SummaryStats {
+  total_conversations: number
+  conversations_trend: number
+  avg_turns: number
+  turns_trend: number
+  hit_rate: number
+  hit_rate_trend: number
+  satisfaction_score: number
+}
+
+interface TrendData {
+  date: string
   count: number
 }
 
-// 使用统计类型
-interface UsageStats {
-  total_queries: number
-  average_response_time: number
-  accuracy_rate: number
-  daily_stats: Array<{
-    date: string
-    queries: number
-    response_time: number
-  }>
+interface TopicData {
+  name: string
+  percentage: number
 }
 
-// 知识库统计类型
-interface KnowledgeBaseStats {
-  total_documents: number
-  total_chunks: number
-  chunk_size: number
-  overlap_size: number
+const isLoading = ref(true)
+
+const summary = ref<SummaryStats>({
+  total_conversations: 12580,
+  conversations_trend: 12.5,
+  avg_turns: 4.2,
+  turns_trend: -2.1,
+  hit_rate: 87.5,
+  hit_rate_trend: 3.2,
+  satisfaction_score: 4.8
+})
+
+const trendData = ref<TrendData[]>([])
+const topTopics = ref<TopicData[]>([
+  { name: '敏感肌护肤步骤', percentage: 28 },
+  { name: '抗老精华成分对比', percentage: 22 },
+  { name: '光电医美后修复', percentage: 18 },
+  { name: '防晒霜选择推荐', percentage: 15 },
+  { name: '美白淡斑方案', percentage: 10 },
+  { name: '换季过敏应对', percentage: 7 }
+])
+
+const formatNumber = (num: number) => {
+  return num.toLocaleString()
 }
 
-// 文档类型
-interface Document {
-  id: number
-  title: string
-  filename: string
-  file_size: number
-  file_type: string
-  status: string
-  created_by: number
-  created_at: string
+const getChangeClass = (trend: number) => {
+  if (trend > 0) return 'text-success'
+  if (trend < 0) return 'text-error'
+  return 'text-muted'
 }
 
-const popularQueries = ref<PopularQuery[]>([])
-const usageStats = ref<UsageStats | null>(null)
-const knowledgeBaseStats = ref<KnowledgeBaseStats | null>(null)
-const isLoading = ref(false)
-const documents = ref<Document[]>([])
-const documentTypeStats = ref<Record<string, number>>({})
+const formatDateShort = (dateStr: string) => {
+  const parts = dateStr.split('-')
+  return `${parts[1]}/${parts[2]}`
+}
 
-// 获取使用统计数据
-const fetchUsageStats = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/api/analytics/usage')
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200 && data.data) {
-        usageStats.value = data.data
-      }
-    }
-  } catch (error) {
-    console.error('获取使用统计失败:', error)
+const generateMockTrend = () => {
+  const data: TrendData[] = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().split('T')[0]
+    data.push({
+      date: dateStr,
+      count: Math.floor(Math.random() * 200) + 200 // 200-400 random
+    })
   }
+  trendData.value = data
 }
 
-// 获取热门查询数据
-const fetchPopularQueries = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/api/analytics/hot-queries')
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200 && data.data) {
-        popularQueries.value = data.data.map((item: any) => ({
-          text: item.query,
-          count: item.count
-        }))
-      }
-    }
-  } catch (error) {
-    console.error('获取热门查询失败:', error)
-  }
-}
-
-// 获取知识库统计数据
-const fetchKnowledgeBaseStats = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/api/knowledge-base/stats')
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200 && data.data) {
-        knowledgeBaseStats.value = {
-          total_documents: data.data.total_documents,
-          total_chunks: data.data.total_chunks,
-          chunk_size: 500, // 固定值，可从后端获取
-          overlap_size: 50 // 固定值，可从后端获取
-        }
-      } else if (data.total_documents) {
-        // 直接返回数据的情况
-        knowledgeBaseStats.value = {
-          total_documents: data.total_documents,
-          total_chunks: data.total_chunks,
-          chunk_size: 500,
-          overlap_size: 50
-        }
-      }
-    }
-  } catch (error) {
-    console.error('获取知识库统计失败:', error)
-  }
-}
-
-// 获取文档列表
-const fetchDocuments = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/api/documents')
-    if (response.ok) {
-      const data = await response.json()
-      documents.value = data
-      calculateDocumentTypeStats()
-    }
-  } catch (error) {
-    console.error('获取文档列表失败:', error)
-  }
-}
-
-// 统计文档类型分布
-const calculateDocumentTypeStats = () => {
-  const stats: Record<string, number> = {};
-  documents.value.forEach(doc => {
-    const fileType = doc.file_type.toUpperCase();
-    stats[fileType] = (stats[fileType] || 0) + 1;
-  });
-  documentTypeStats.value = stats;
-}
-
-const fetchAnalytics = async () => {
-  isLoading.value = true
-  try {
-    await Promise.all([
-      fetchUsageStats(),
-      fetchPopularQueries(),
-      fetchKnowledgeBaseStats(),
-      fetchDocuments()
-    ])
-  } catch (error) {
-    console.error('获取统计数据失败:', error)
-  } finally {
-    isLoading.value = false
-  }
+const animateElements = () => {
+  nextTick(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from('.stat-card', {
+        autoAlpha: 0,
+        y: 10,
+        duration: 0.6,
+        stagger: 0.08,
+        ease: 'power3.out',
+        clearProps: 'all'
+      })
+      gsap.from('.chart-card', {
+        autoAlpha: 0,
+        y: 15,
+        duration: 0.7,
+        stagger: 0.1,
+        ease: 'power3.out',
+        clearProps: 'all'
+      })
+    })
+  })
 }
 
 onMounted(() => {
-  fetchAnalytics()
+  generateMockTrend()
+  isLoading.value = false
+  animateElements()
 })
 </script>
 
@@ -256,223 +216,289 @@ onMounted(() => {
   padding: 0;
 }
 
-/* 统计卡片 */
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text);
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 2rem; }
+
+/* 核心指标卡片 */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
-  margin-bottom: 2rem;
 }
 
 .stat-card {
-  background-color: #1e293b;
-  border-radius: 0.75rem;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #475569;
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s var(--ease);
 }
 
 .stat-card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border);
+}
+
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .stat-title {
-  color: #cbd5e1;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
   font-weight: 500;
-  margin-bottom: 0.5rem;
+}
+
+.stat-icon-small {
+  font-size: 1.25rem;
+  opacity: 0.8;
 }
 
 .stat-value {
   font-size: 2rem;
+  font-family: var(--font-display);
   font-weight: 700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  line-height: 1.2;
 }
 
 .stat-change {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.stat-change.positive {
-  color: #10b981;
-}
-
-.stat-change.negative {
-  color: #ef4444;
-}
-
-/* 网格布局 */
-.grid {
-  display: grid;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-.md\:grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-/* 卡片样式 */
-.card {
-  background-color: #1e293b;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #475569;
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  transform: translateY(-2px);
-}
-
-/* 弹性布局 */
-.flex {
+  font-size: 0.8rem;
   display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
 }
 
-.justify-between {
+.trend-icon {
+  font-weight: bold;
+}
+
+.text-success { color: var(--success); }
+.text-error { color: var(--error); }
+.text-muted { color: var(--text-muted); }
+
+/* 图表区 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin: 0 0 1.5rem 0;
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 250px;
+  position: relative;
+}
+
+.loading-state {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-style: italic;
+  background-color: rgba(251, 248, 245, 0.5);
+}
+
+/* 模拟柱状图 */
+.mock-bar-chart {
+  display: flex;
+  height: 100%;
+  padding-bottom: 1.5rem;
+}
+
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-right: 1rem;
+  border-right: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  text-align: right;
+  width: 40px;
+}
+
+.bars-area {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  width: 30px;
+}
+
+.bar-bg {
+  flex: 1;
+  width: 100%;
+  background-color: var(--border-light);
+  border-radius: var(--radius-sm);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(to top, var(--primary), var(--primary-light));
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: height 1s var(--ease);
+  cursor: pointer;
+}
+
+.bar-fill:hover {
+  background: linear-gradient(to top, var(--primary-dark), var(--primary));
+}
+
+.bar-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text);
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  font-family: var(--font-mono);
+}
+
+.bar-fill:hover .bar-tooltip {
+  opacity: 1;
+}
+
+.x-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* 热门话题列表 */
+.topics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.topic-item {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
 }
 
-.items-center {
-  align-items: center;
-}
-
-.py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-.border-b {
-  border-bottom: 1px solid #475569;
-}
-
-.mt-3 {
-  margin-top: 1rem;
-}
-
-.mt-4 {
-  margin-top: 1.5rem;
-}
-
-/* 文本样式 */
-.text-muted {
-  color: #94a3b8;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-/* 加载和空数据状态 */
-.loading-text {
-  color: #94a3b8;
-  text-align: center;
-  padding: 1rem;
-  font-style: italic;
-}
-
-.empty-text {
-  color: #94a3b8;
-  text-align: center;
-  padding: 1rem;
-  font-style: italic;
-}
-
-/* 图表容器 */
-.chart-container {
-  background-color: #334155;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  height: 300px;
-  border: 1px solid #475569;
-}
-
-/* 柱状图 */
-.bar-chart {
-  height: 100%;
+.topic-info {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 140px;
+}
+
+.topic-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--surface-alt);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
-.bar-item {
+.rank-1 { background-color: rgba(196, 136, 122, 0.2); color: var(--primary-dark); }
+.rank-2 { background-color: rgba(196, 136, 122, 0.15); color: var(--primary); }
+.rank-3 { background-color: rgba(196, 136, 122, 0.1); color: var(--primary-light); }
+
+.topic-name {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topic-progress-container {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.bar-label {
-  width: 60px;
-  font-weight: 600;
-  color: #cbd5e1;
+.topic-progress-bar {
+  height: 6px;
+  background-color: var(--primary-light);
+  border-radius: var(--radius-pill);
+  transition: width 1s var(--ease);
+}
+
+.topic-percent {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  width: 35px;
   text-align: right;
 }
 
-.bar-wrapper {
-  flex: 1;
-  height: 30px;
-  background-color: #475569;
-  border-radius: 0.25rem;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
+@media (max-width: 1200px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
 }
 
-.bar {
-  height: 20px;
-  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 0.25rem;
-  transition: width 0.5s ease;
-}
-
-.bar-count {
-  position: absolute;
-  right: 10px;
-  font-weight: 600;
-  color: #cbd5e1;
-  font-size: 0.875rem;
-}
-
-/* 图表占位符 */
-.chart-placeholder {
-  background-color: #334155;
-  border-radius: 0.75rem;
-  padding: 2rem;
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 1.125rem;
-  border: 2px dashed #475569;
-  transition: all 0.3s ease;
-}
-
-.chart-placeholder:hover {
-  border-color: #6366f1;
-  color: #cbd5e1;
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
 }
 </style>

@@ -1,120 +1,128 @@
 <template>
   <div class="knowledge-page">
-    <div class="flex justify-between items-center mb-4">
-      <h2>知识库管理</h2>
-      <div class="flex gap-2">
-        <button class="btn btn-primary">
-          <span>➕</span>
-          <span>添加知识</span>
-        </button>
-        <div class="search-box">
-          <span>🔍</span>
-          <input type="text" placeholder="搜索知识..." v-model="searchQuery">
+    <div class="page-header mb-4">
+      <h2 class="page-title">知识库管理</h2>
+      <p class="page-subtitle text-muted">系统共有 {{ totalChunks }} 个知识分块可供查询</p>
+    </div>
+
+    <!-- 统计卡片区 -->
+    <div class="stats-grid mb-4">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ documentCount }}</div>
+          <div class="stat-label">文档总数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🧩</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ totalChunks }}</div>
+          <div class="stat-label">知识分块总数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-content">
+          <div class="stat-value">{{ searchCount }}</div>
+          <div class="stat-label">今日查询次数</div>
         </div>
       </div>
     </div>
 
-    <!-- 知识库统计卡片 -->
-    <div class="stats-container mb-6">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="stat-content">
-          <div class="stat-label">文档总数</div>
-          <div class="stat-value">{{ isLoading ? '加载中...' : knowledgeStats?.total_documents || 0 }}</div>
+    <!-- 搜索和过滤区 -->
+    <div class="card mb-4 search-card">
+      <div class="flex gap-3 items-center w-full">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="搜索知识库内容..." 
+            class="input search-input"
+            @keyup.enter="searchKnowledge"
+          >
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">📝</div>
-        <div class="stat-content">
-          <div class="stat-label">分块总数</div>
-          <div class="stat-value">{{ isLoading ? '加载中...' : knowledgeStats?.total_chunks || 0 }}</div>
+        <div class="filter-box">
+          <select class="input select-input" v-model="filterDocId">
+            <option value="">所有文档</option>
+            <option v-for="doc in documents" :key="doc.id" :value="doc.id">
+              {{ doc.title || doc.filename }}
+            </option>
+          </select>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">❓</div>
-        <div class="stat-content">
-          <div class="stat-label">查询总数</div>
-          <div class="stat-value">{{ isLoading ? '加载中...' : knowledgeStats?.total_queries || 0 }}</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-content">
-            <div class="stat-label">平均响应时间</div>
-            <div class="stat-value">{{ isLoading ? '加载中...' : (knowledgeStats?.average_response_time ? knowledgeStats.average_response_time.toFixed(2) : '0') + 'ms' }}</div>
-          </div>
+        <button class="btn btn-primary" @click="searchKnowledge">搜索</button>
       </div>
     </div>
-    
-    <!-- 文档分块表格 -->
+
+    <!-- 知识列表区 -->
     <div class="table-container">
       <table class="table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>文档ID</th>
-            <th>分块索引</th>
-            <th>分块内容</th>
-            <th>创建时间</th>
+            <th width="10%">文档ID</th>
+            <th width="15%">分块索引</th>
+            <th width="60%">内容摘要</th>
+            <th width="15%">更新时间</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="chunk in documentChunks" :key="chunk.id">
-            <td>{{ chunk.id }}</td>
-            <td>{{ chunk.document_id }}</td>
-            <td>{{ chunk.chunk_index }}</td>
-            <td class="chunk-content-cell">{{ chunk.chunk_content }}</td>
-            <td>{{ new Date(chunk.created_at).toLocaleString('zh-CN') }}</td>
+        <tbody class="table-body">
+          <tr v-for="chunk in knowledgeChunks" :key="chunk.id" class="table-row">
+            <td>
+              <span class="badge-type">DOC-{{ chunk.document_id }}</span>
+            </td>
+            <td>
+              <span class="chunk-index">分块 {{ chunk.chunk_index + 1 }}</span>
+            </td>
+            <td>
+              <div class="content-preview">{{ truncateText(chunk.chunk_content, 100) }}</div>
+            </td>
+            <td class="text-muted">{{ formatDate(chunk.created_at) }}</td>
           </tr>
-          <tr v-if="documentChunks.length === 0 && !isLoading">
-            <td colspan="5" class="text-center">暂无文档分块</td>
+          <tr v-if="knowledgeChunks.length === 0 && !isLoading">
+            <td colspan="4" class="text-center empty-state">
+              <span v-if="searchQuery">没有找到匹配"{{ searchQuery }}"的知识分块</span>
+              <span v-else>暂无知识分块，请先上传文档</span>
+            </td>
           </tr>
           <tr v-if="isLoading">
-            <td colspan="5" class="text-center">加载中...</td>
+            <td colspan="4" class="text-center empty-state">
+              加载中，请稍候...
+            </td>
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <!-- 分页控件 -->
-    <div class="pagination-container">
-      <div class="pagination-info">
-        显示 {{ (page - 1) * pageSize + 1 }} - {{ Math.min(page * pageSize, totalChunks) }} 条，共 {{ totalChunks }} 条
-      </div>
-      <div class="pagination-controls">
-        <div class="dropdown">
-          <select v-model="pageSize" class="input" @change="handlePageSizeChange">
-            <option value="10">10条/页</option>
-            <option value="20">20条/页</option>
-            <option value="50">50条/页</option>
-            <option value="100">100条/页</option>
-          </select>
-        </div>
-        <button class="btn btn-secondary btn-sm" @click="handlePageChange(page - 1)" :disabled="page === 1 || isLoading">
-          上一页
-        </button>
-        <span class="page-info">{{ page }} / {{ totalPages }}</span>
-        <button class="btn btn-secondary btn-sm" @click="handlePageChange(page + 1)" :disabled="page === totalPages || isLoading">
-          下一页
-        </button>
+      <!-- 分页控件 -->
+      <div class="pagination-container" v-if="totalPages > 1">
+        <button 
+          class="btn btn-secondary btn-sm" 
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+        >上一页</button>
+        <div class="page-info">第 {{ currentPage }} 页，共 {{ totalPages }} 页</div>
+        <button 
+          class="btn btn-secondary btn-sm" 
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+        >下一页</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
+import gsap from 'gsap'
 
-// 知识库统计类型
-interface KnowledgeStats {
-  total_documents: number
-  total_chunks: number
-  total_queries: number
-  average_response_time: number
+// 接口定义
+interface Document {
+  id: number
+  title: string
+  filename: string
 }
 
-// 文档分块类型
-interface DocumentChunk {
+interface KnowledgeChunk {
   id: number
   document_id: number
   chunk_content: string
@@ -122,103 +130,173 @@ interface DocumentChunk {
   created_at: string
 }
 
-// 分页参数
-const page = ref(1)
-const pageSize = ref(10)
+// 状态
+const documentCount = ref(0)
 const totalChunks = ref(0)
-
-const searchQuery = ref('')
-const knowledgeStats = ref<KnowledgeStats | null>(null)
-const documentChunks = ref<DocumentChunk[]>([])
+const searchCount = ref(128) // 模拟数据
+const documents = ref<Document[]>([])
+const knowledgeChunks = ref<KnowledgeChunk[]>([])
 const isLoading = ref(false)
+const searchQuery = ref('')
+const filterDocId = ref('')
 
-// 获取知识库统计数据
-const fetchKnowledgeStats = async () => {
+// 分页
+const currentPage = ref(1)
+const totalPages = ref(1)
+const limit = 10
+
+// 动画函数
+const animateEntrance = () => {
+  nextTick(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      // 卡片交错动画
+      gsap.from('.stat-card', {
+        autoAlpha: 0,
+        y: 10,
+        duration: 0.6,
+        stagger: 0.08,
+        ease: 'power3.out',
+        clearProps: 'all'
+      })
+      
+      // 搜索区域动画
+      gsap.from('.search-card', {
+        autoAlpha: 0,
+        y: 8,
+        duration: 0.6,
+        delay: 0.1,
+        ease: 'power3.out',
+        clearProps: 'all'
+      })
+    })
+  })
+}
+
+const animateTableRows = () => {
+  nextTick(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from('.table-row', {
+        autoAlpha: 0,
+        y: 10,
+        duration: 0.4,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'all'
+      })
+    })
+  })
+}
+
+// 工具函数
+const truncateText = (text: string, length: number): string => {
+  if (text.length <= length) return text
+  return text.substring(0, length) + '...'
+}
+
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+// 获取数据
+const fetchStats = async () => {
   try {
-    const response = await fetch('http://localhost:8000/api/knowledge-base/stats')
+    const response = await fetch('http://localhost:8000/api/documents')
     if (response.ok) {
       const data = await response.json()
-      // 检查数据格式，支持直接返回统计数据的情况
-      if (data.code === 200 && data.data) {
-        // 后端返回格式: { code: 200, data: { ...stats } }
-        knowledgeStats.value = data.data
-        totalChunks.value = data.data.total_chunks
-      } else {
-        // 后端直接返回统计数据: { ...stats }
-        knowledgeStats.value = data
-        totalChunks.value = data.total_chunks
+      documents.value = data
+      documentCount.value = data.length
+      
+      // 真实项目中应该有一个专门的统计接口，这里只是模拟获取总分块数
+      if (data.length > 0) {
+        // 先获取第一页知识块来获取总数信息
+        await fetchKnowledgeChunks()
       }
-    } else {
-      console.error('获取知识库统计失败')
     }
   } catch (error) {
-    console.error('获取知识库统计出错:', error)
+    console.error('获取统计数据出错:', error)
   }
 }
 
-// 获取文档分块数据
-const fetchDocumentChunks = async () => {
+const fetchKnowledgeChunks = async () => {
   isLoading.value = true
   try {
-    // 尝试使用不同的API路径，适配后端路由配置
-    // 先获取所有文档，然后获取每个文档的分块
-    const documentsResponse = await fetch('http://localhost:8000/api/documents')
-    if (documentsResponse.ok) {
-      const documents = await documentsResponse.json()
-      let allChunks: DocumentChunk[] = []
+    // 这里应该是带有分页和搜索的API
+    // 假设API支持类似 ?skip=0&limit=10&query=xxx&doc_id=1 的查询
+    let url = `http://localhost:8000/api/documents/chunks?skip=${(currentPage.value - 1) * limit}&limit=${limit}`
+    
+    // 因为后端当前没有这个API，我们这里模拟行为
+    // 如果是真实的后端，你需要对应修改
+    
+    // 这里为了演示，我们先获取所有文档，然后合并它们的分块，然后在前端分页
+    if (documents.value.length > 0) {
+      let allChunks: KnowledgeChunk[] = []
       
-      // 获取所有文档的分块
-      for (const doc of documents) {
-        const chunksResponse = await fetch(`http://localhost:8000/api/documents/${doc.id}/chunks`)
-        if (chunksResponse.ok) {
-          const chunks = await chunksResponse.json()
-          allChunks = [...allChunks, ...chunks]
+      for (const doc of documents.value) {
+        if (filterDocId.value && parseInt(filterDocId.value) !== doc.id) continue
+        
+        try {
+          const res = await fetch(`http://localhost:8000/api/documents/${doc.id}/chunks`)
+          if (res.ok) {
+            const chunks = await res.json()
+            allChunks = [...allChunks, ...chunks]
+          }
+        } catch (e) {
+          // ignore
         }
       }
       
-      // 手动分页
-      const startIndex = (page.value - 1) * pageSize.value
-      const endIndex = startIndex + pageSize.value
-      documentChunks.value = allChunks.slice(startIndex, endIndex)
+      // 搜索过滤
+      if (searchQuery.value) {
+        allChunks = allChunks.filter(chunk => 
+          chunk.chunk_content.toLowerCase().includes(searchQuery.value.toLowerCase())
+        )
+      }
+      
       totalChunks.value = allChunks.length
-    } else {
-      console.error('获取文档列表失败')
+      totalPages.value = Math.ceil(totalChunks.value / limit) || 1
+      
+      // 修正当前页码
+      if (currentPage.value > totalPages.value) {
+        currentPage.value = totalPages.value
+      }
+      
+      // 前端分页
+      const startIndex = (currentPage.value - 1) * limit
+      const endIndex = startIndex + limit
+      knowledgeChunks.value = allChunks.slice(startIndex, endIndex)
+      
+      animateTableRows()
     }
   } catch (error) {
-    console.error('获取文档分块出错:', error)
+    console.error('获取知识块出错:', error)
   } finally {
     isLoading.value = false
   }
 }
 
-// 计算总页数
-const totalPages = computed(() => {
-  return Math.ceil(totalChunks.value / pageSize.value)
-})
-
-// 页面变化处理
-const handlePageChange = (newPage: number) => {
-  if (newPage >= 1 && newPage <= totalPages.value) {
-    page.value = newPage
-    fetchDocumentChunks()
-  }
+// 事件处理
+const searchKnowledge = () => {
+  currentPage.value = 1
+  fetchKnowledgeChunks()
 }
 
-// 每页条数变化处理
-const handlePageSizeChange = () => {
-  // 重置到第一页
-  page.value = 1
-  fetchDocumentChunks()
-}
-
-// 刷新数据
-const refreshData = () => {
-  fetchKnowledgeStats()
-  fetchDocumentChunks()
+const changePage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  fetchKnowledgeChunks()
 }
 
 onMounted(() => {
-  refreshData()
+  fetchStats().then(() => {
+    animateEntrance()
+  })
 })
 </script>
 
@@ -227,62 +305,131 @@ onMounted(() => {
   padding: 0;
 }
 
-.flex {
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text);
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.flex { display: flex; }
+.items-center { align-items: center; }
+.mb-4 { margin-bottom: 1.5rem; }
+.gap-3 { gap: 0.75rem; }
+.w-full { width: 100%; }
+.text-muted { color: var(--text-muted); }
+
+/* 统计卡片区 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
   align-items: center;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s var(--ease);
 }
 
-.mb-4 {
-  margin-bottom: 1rem;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
 }
 
-.gap-2 {
-  gap: 0.5rem;
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(196, 136, 122, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--primary);
 }
 
-/* 搜索框 */
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 搜索区 */
+.search-card {
+  padding: 1rem 1.5rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border-light);
+}
+
 .search-box {
+  flex: 1;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: #0f172a;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #475569;
-  transition: all 0.3s ease;
 }
 
-.search-box:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--text-muted);
 }
 
-.search-box input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #f8fafc;
-  font-size: 0.875rem;
+.search-input {
+  padding-left: 2.5rem;
+  width: 100%;
 }
 
-.search-box input::placeholder {
-  color: #94a3b8;
+.filter-box {
+  width: 200px;
 }
 
-/* 表格样式 */
+.select-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%238A7F79%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem top 50%;
+  background-size: 0.65rem auto;
+}
+
+/* 表格区 */
 .table-container {
-  overflow-x: auto;
-  background-color: #1e293b;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #475569;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
 }
 
 .table {
@@ -292,196 +439,88 @@ onMounted(() => {
 
 .table th,
 .table td {
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   text-align: left;
-  border-bottom: 1px solid #475569;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .table th {
-  background-color: #334155;
+  background-color: var(--surface-alt);
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
 }
 
 .table tbody tr {
-  transition: all 0.3s ease;
+  transition: background-color 0.2s var(--ease);
 }
 
 .table tbody tr:hover {
-  background-color: #334155;
+  background-color: var(--bg);
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* 按钮组 */
-.btn-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.btn-sm {
-  padding: 0.5rem 1rem;
+.badge-type {
+  background-color: var(--bg);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
 }
 
-/* 统计卡片样式 */
-.stats-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-card {
-  background-color: #1e293b;
-  border: 1px solid #475569;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-color: #6366f1;
-}
-
-.stat-icon {
-  font-size: 2rem;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(99, 102, 241, 0.1);
-  border-radius: 0.5rem;
-  color: #6366f1;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: #94a3b8;
+.chunk-index {
   font-weight: 500;
-  margin-bottom: 0.25rem;
+  color: var(--primary);
+  font-size: 0.85rem;
+  background-color: rgba(196, 136, 122, 0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
 }
 
-.stat-value {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #f8fafc;
-  line-height: 1.2;
+.content-preview {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
-/* 分块内容单元格样式 */
-.chunk-content-cell {
-  max-width: 400px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.text-center { text-align: center; }
+
+.empty-state {
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
-.chunk-content-cell:hover {
-  overflow: visible;
-  white-space: normal;
-  z-index: 10;
-  position: relative;
-  background-color: #334155;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* 分页样式 */
+/* 分页控件 */
 .pagination-container {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background-color: #1e293b;
-  border: 1px solid #475569;
-  border-radius: 0.5rem;
-  position: relative;
-  z-index: 100;
-  width: 100%;
-  overflow: visible;
-}
-
-.pagination-info {
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-/* 下拉框样式 */
-.dropdown select {
-  background-color: #0f172a;
-  color: #e5e7eb;
-  border: 1px solid #475569;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dropdown select:hover {
-  border-color: #6366f1;
-}
-
-.dropdown select:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  padding: 1rem 1.5rem;
+  background-color: var(--surface);
+  border-top: 1px solid var(--border-light);
 }
 
 .page-info {
-  color: #cbd5e1;
-  font-weight: 600;
-  min-width: 60px;
-  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
 }
 
-/* 响应式调整 */
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* 响应式 */
+@media (max-width: 992px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 768px) {
-  .stats-container {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .stat-card {
-    padding: 1rem;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .pagination-container {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .chunk-content-cell {
-    max-width: 200px;
-  }
+  .stats-grid { grid-template-columns: 1fr; }
+  .search-card .flex { flex-direction: column; }
+  .filter-box { width: 100%; }
 }
 </style>

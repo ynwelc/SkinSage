@@ -1,11 +1,54 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* ═══════════════════════════════════════════
+   SkinSage Design System — "Petal & Silk"
+   A warm, feminine light theme for beauty industry
+   ═══════════════════════════════════════════ */
 
-  color-scheme: dark;
-  color: #e5e7eb;
-  background-color: #0f172a;
+:root {
+  /* ── Color Palette ── */
+  --bg:             #FBF8F5;
+  --surface:        #FFFFFF;
+  --surface-alt:    #F7F0EB;
+  --primary:        #C4887A;
+  --primary-light:  #E8C4BA;
+  --primary-dark:   #A86B5E;
+  --accent:         #8B9E8B;
+  --accent-light:   #B5C7B0;
+  --text:           #3D3632;
+  --text-secondary: #6B5C55;
+  --text-muted:     #8F857D;
+  --border:         #E8E0DA;
+  --border-light:   #F0EAE5;
+  --success:        #6B9E6B;
+  --warning:        #D4A54A;
+  --error:          #C47070;
+
+  /* ── Typography ── */
+  --font-display: 'Playfair Display', 'Georgia', serif;
+  --font-body:    'Inter', 'system-ui', sans-serif;
+  --font-mono:    'DM Mono', 'Menlo', monospace;
+
+  /* ── Shadows (warm-tinted) ── */
+  --shadow-sm:  0 1px 3px rgba(196, 136, 122, 0.06);
+  --shadow-md:  0 4px 12px rgba(196, 136, 122, 0.08);
+  --shadow-lg:  0 8px 24px rgba(196, 136, 122, 0.10);
+  --shadow-xl:  0 16px 40px rgba(196, 136, 122, 0.12);
+
+  /* ── Radius ── */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-pill: 100px;
+
+  /* ── Transition ── */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── System ── */
+  color-scheme: light;
+  font-family: var(--font-body);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text);
+  background-color: var(--bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,16 +56,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #6366f1;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #8b5cf6;
-}
-
-* {
+/* ── Reset ── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -32,8 +69,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0f172a;
-  color: #e5e7eb;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 #app {
@@ -45,32 +82,71 @@ body {
   overflow: hidden;
 }
 
+/* ── Links ── */
+a {
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.25s var(--ease);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ── Buttons ── */
 button {
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #6366f1;
-  color: white;
+  background-color: var(--primary);
+  color: #fff;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s var(--ease);
 }
 
 button:hover {
-  background-color: #4f46e5;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+  background-color: var(--primary-dark);
+  box-shadow: var(--shadow-md);
 }
 
 button:focus,
 button:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 button:disabled {
-  background-color: #4b5563;
+  background-color: var(--border);
+  color: var(--text-muted);
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-light);
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: var(--primary-light);
+  color: var(--text);
 }

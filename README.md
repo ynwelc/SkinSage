@@ -1,6 +1,4 @@
-# SkinSage
-
-> 智能美容咨询助手 | AI-Powered Beauty Consultant
+# 智能美容咨询助手
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi)
 ![Vue 3](https://img.shields.io/badge/Vue-3.5-4FC08D?style=flat-square&logo=vue.js)
@@ -11,6 +9,11 @@
 ![RAG](https://img.shields.io/badge/RAG-Enabled-10B981?style=flat-square)
 
 > **一句话硬核总结**：基于 RAG 技术的美业垂类智能问答系统，从 PDF 语义切分、向量精准召回，到前端 Vue3 打字机流式渲染，一个人搞定了全栈闭环。
+
+[![Bilibili](https://img.shields.io/badge/Bilibili-%E8%A7%86%E9%A2%91%E6%BC%94%E7%A4%BA-blue?style=flat-square&logo=bilibili)](https://www.bilibili.com/video/BV1QuEz65EHQ/)
+
+### 效果演示视频
+<video src="./beauty-fonted/demo-video/demo.webm" controls width="100%"></video>
 
 ---
 
@@ -28,6 +31,12 @@
 **我的解决方案**：构建一个完整的 RAG（检索增强生成）系统，让 AI 基于企业私有知识库回答问题，实现**精准、可溯源、多轮连贯**的专业咨询服务。
 
 从 PDF/Word 文档解析、语义分块策略设计、向量嵌入与检索，到后端流式响应、前端打字机效果渲染，**全部由一个人从零到一完成**。
+
+---
+
+## 架构设计
+
+![SkinSage 架构图](picture/SkinSage.png)
 
 ---
 
@@ -224,24 +233,13 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # 安装依赖
 pip install -r requirements.txt
 
-# 复制环境变量模板并配置
-cp .env.example .env
-```
+# 配置环境变量（创建 .env 文件）
+cat > .env << EOF
+DATABASE_URL=mysql+pymysql://root:password@localhost:3306/beauty_assistant
+SILICONFLOW_API_KEY=your_api_key_here
+SECRET_KEY=your_secret_key_here
+EOF
 
-编辑 `.env` 文件，填入你的配置：
-
-```bash
-# 数据库配置
-DATABASE_URL=mysql+pymysql://root:your_password@localhost:3306/beauty_assistant
-
-# JWT 密钥（请修改为随机字符串）
-SECRET_KEY=your-super-secret-key-change-this
-
-# 硅基流动 API Key（必填，从 https://siliconflow.cn 获取）
-SILICONFLOW_API_KEY=your-api-key-here
-```
-
-```bash
 # 初始化数据库
 python init_database.py
 

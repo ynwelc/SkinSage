@@ -46,7 +46,7 @@ class QAResponse(BaseModel):
     conversation_history: List[Dict[str, str]]
 
 # 路由
-@router.post("/", summary="智能问答")
+@router.post("", summary="智能问答")
 def qa(request: QARequest, db: Session = Depends(get_db)):
     """智能问答服务，支持流式输出"""
     

@@ -1,7 +1,15 @@
 <template>
-  <div class="login-container gradient-bg">
+  <div class="login-container">
+    <!-- 装饰元素 -->
+    <div class="decor-circle decor-1"></div>
+    <div class="decor-circle decor-2"></div>
+
     <div class="login-card">
-      <h1 class="login-title">Beauty AI Assistant</h1>
+      <div class="login-header">
+        <img src="/beauty-ai-logo.svg?v=2" alt="Beauty AI Logo" class="login-logo">
+        <h1 class="login-title">SkinSage</h1>
+        <p class="login-subtitle">智能美容咨询助手</p>
+      </div>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <label class="form-label" for="username">用户名</label>
@@ -32,7 +40,7 @@
       <!-- 错误提示 -->
       <div v-if="error" class="error-message mt-3">{{ error }}</div>
       
-      <div class="flex gap-2 mt-4">
+      <div class="btn-row mt-4">
         <button type="submit" class="btn btn-primary flex-1" :disabled="loading">
           <span v-if="loading">登录中...</span>
           <span v-else>登录</span>
@@ -45,9 +53,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import gsap from 'gsap'
 
 const router = useRouter()
 
@@ -84,6 +92,39 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+
+onMounted(() => {
+  nextTick(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.from('.login-card', {
+        autoAlpha: 0,
+        y: 20,
+        duration: 0.8,
+        ease: 'power3.out',
+        clearProps: 'transform'
+      })
+      gsap.from('.decor-circle', {
+        autoAlpha: 0,
+        scale: 0.9,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+        delay: 0.2,
+        clearProps: 'transform'
+      })
+      gsap.from('.form-group, .btn-row', {
+        autoAlpha: 0,
+        y: 10,
+        duration: 0.6,
+        stagger: 0.08,
+        delay: 0.2,
+        ease: 'power3.out',
+        clearProps: 'transform'
+      })
+    })
+  })
+})
 </script>
 
 <style scoped>
@@ -93,54 +134,106 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  background: linear-gradient(160deg, var(--bg) 0%, var(--surface-alt) 50%, #F3E8E2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 装饰圆 */
+.decor-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decor-1 {
+  width: 400px;
+  height: 400px;
+  top: -120px;
+  right: -80px;
+  background: radial-gradient(circle, rgba(196, 136, 122, 0.08) 0%, transparent 70%);
+}
+
+.decor-2 {
+  width: 300px;
+  height: 300px;
+  bottom: -80px;
+  left: -60px;
+  background: radial-gradient(circle, rgba(139, 158, 139, 0.08) 0%, transparent 70%);
 }
 
 .login-card {
-  background-color: #1e293b;
-  border-radius: 1rem;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
   padding: 2.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid #475569;
-  max-width: 450px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-light);
+  max-width: 440px;
   width: 100%;
-  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  width: 48px;
+  height: 48px;
 }
 
 .login-title {
-  text-align: center;
-  margin-bottom: 2rem;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 0;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 400;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text);
+  font-size: 0.875rem;
 }
 
 .form-control {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #0f172a;
-  color: #f8fafc;
-  border: 1px solid #475569;
-  border-radius: 0.5rem;
+  padding: 0.7rem 0.875rem;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  transition: all 0.3s ease;
+  font-family: var(--font-body);
+  transition: all 0.25s var(--ease);
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(196, 136, 122, 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
 }
 
 .radio-group {
@@ -154,24 +247,28 @@ const handleLogin = async () => {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.radio-item:hover {
+  color: var(--text);
 }
 
 .radio-input {
   width: 1rem;
   height: 1rem;
-  accent-color: #6366f1;
+  accent-color: var(--primary);
 }
 
-.flex {
+.btn-row {
   display: flex;
+  gap: 0.75rem;
 }
 
 .flex-1 {
   flex: 1;
-}
-
-.gap-2 {
-  gap: 0.5rem;
 }
 
 .mt-3 {
@@ -183,12 +280,12 @@ const handleLogin = async () => {
 }
 
 .error-message {
-  color: #ef4444;
+  color: var(--error);
   font-size: 0.875rem;
   font-weight: 500;
-  background-color: rgba(239, 68, 68, 0.1);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(196, 112, 112, 0.06);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(196, 112, 112, 0.15);
 }
 </style>

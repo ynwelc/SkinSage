@@ -2,6 +2,9 @@
 
 A Vue 3 + TypeScript + Vite SPA scaffold with a clean layout, routing, and a lightweight store. This project is suitable for UI dashboards, admin panels, and design-system experiments.
 
+## Demo Video
+<video src="./demo-video/demo.webm" controls width="100%"></video>
+
 ## Tech stack (high level)
 - Vue 3 (with script setup SFCs)
 - TypeScript

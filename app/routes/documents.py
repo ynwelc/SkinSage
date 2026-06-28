@@ -57,7 +57,7 @@ class DocumentCreate(BaseModel):
     status: str
 
 # 路由
-@router.get("/", response_model=List[DocumentResponse], summary="获取文档列表")
+@router.get("", response_model=List[DocumentResponse], summary="获取文档列表")
 def get_documents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """获取文档列表"""
     documents = db.query(Document).offset(skip).limit(limit).all()
@@ -80,7 +80,7 @@ def get_document_chunks(document_id: int, skip: int = 0, limit: int = 100, db: S
     chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).offset(skip).limit(limit).all()
     return chunks
 
-@router.post("/", summary="上传文档")
+@router.post("", summary="上传文档")
 def upload_document(
     file: UploadFile = File(...),
     title: str = Form(None),

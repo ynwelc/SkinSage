@@ -7,34 +7,19 @@ import { RouterView } from 'vue-router'
 </template>
 
 <style>
-/* 全局样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background-color: #0f172a;
-  color: #e5e7eb;
-  line-height: 1.5;
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
-}
+/* ── Global utility styles ── */
 
 /* 渐变背景 */
 .gradient-bg {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, var(--bg) 0%, var(--surface-alt) 100%);
 }
 
 .gradient-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 
 .gradient-accent {
-  background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
 }
 
 /* 容器 */
@@ -46,17 +31,17 @@ body {
 
 /* 卡片样式 */
 .card {
-  background-color: #1e293b;
-  border-radius: 0.75rem;
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
   padding: 1.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #475569;
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all 0.25s var(--ease);
 }
 
 .card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
 /* 按钮样式 */
@@ -64,53 +49,61 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.3s ease;
-  border: none;
+  transition: all 0.25s var(--ease);
+  border: 1px solid transparent;
   cursor: pointer;
   font-size: 0.875rem;
   gap: 0.5rem;
+  font-family: var(--font-body);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: #f8fafc;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border: none;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  box-shadow: 0 4px 14px rgba(196, 136, 122, 0.35);
   transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary {
-  background-color: #334155;
-  color: #f8fafc;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
-  background-color: #475569;
+  background-color: var(--surface-alt);
+  border-color: var(--primary-light);
 }
 
 /* 输入框样式 */
 .input {
   width: 100%;
   padding: 0.75rem;
-  background-color: #0f172a;
-  color: #f8fafc;
-  border: 1px solid #475569;
-  border-radius: 0.5rem;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  transition: all 0.3s ease;
+  font-family: var(--font-body);
+  transition: all 0.25s var(--ease);
 }
 
 .input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(196, 136, 122, 0.12);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
 }
 
 /* 隐藏类 */
